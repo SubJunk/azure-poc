@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+  creationTimestamp: null
+  labels:
+    name: {{ .Values.apiName }}
+  name: {{ .Values.apiName }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: {{ .Values.apiName }}
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+      creationTimestamp: null
+      labels:
+        name: {{ .Values.apiName }}
+    spec:
+      containers:
+        - image: {{ .Values.apiImage.repository }}/{{ .Values.apiImage.name }}:{{ .Values.apiImage.tag }}
+          name: {{ .Values.apiName }}
+          ports:
+            - containerPort: 3333
+          resources: {}
+      restartPolicy: Always
+status: {}

@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+  creationTimestamp: null
+  labels:
+    name: {{ .Values.htmlName }}
+  name: {{ .Values.htmlName }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: {{ .Values.htmlName }}
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+      creationTimestamp: null
+      labels:
+        name: {{ .Values.htmlName }}
+    spec:
+      containers:
+        - env:
+            - name: apiPath
+              value: "http://{{ .Values.apiName }}.default.svc:8081"
+          image: {{ .Values.htmlImage.repository }}/{{ .Values.htmlImage.name }}:{{ .Values.htmlImage.tag }}
+          name: {{ .Values.htmlName }}
+          ports:
+            - containerPort: 3334
+          resources: {}
+      restartPolicy: Always
+status: {}

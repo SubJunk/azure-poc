@@ -1,0 +1,10 @@
+apiName: api
+htmlName: html
+apiImage:
+  name: api
+  repository: klausazurepoc.azurecr.io
+  tag: v8
+htmlImage:
+  name: html
+  repository: klausazurepoc.azurecr.io
+  tag: latest
