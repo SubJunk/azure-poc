@@ -34,7 +34,7 @@ jobs:
     # Build Nx apps
     - run: |
         npm i
-        nx build
+        npx nx build
 
     # Connect to Azure Container registry (ACR)
     - uses: azure/docker-login@v1
