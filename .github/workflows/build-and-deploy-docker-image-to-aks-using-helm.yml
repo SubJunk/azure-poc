@@ -10,7 +10,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: dev
+    environment: testing
     steps:
     - uses: actions/checkout@master
 
