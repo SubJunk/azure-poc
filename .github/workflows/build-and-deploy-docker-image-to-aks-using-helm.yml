@@ -74,14 +74,14 @@ jobs:
     - name: 'Deploy'
       uses: 'deliverybot/helm@v1'
       with:
-        release: '${{GITHUB_SHA}}'
+        release: '${{env.GITHUB_SHA}}'
         namespace: 'default'
         chart: 'ci-helm/azure-poc'
         token: '${{ github.token }}'
         values: |
-          tag: ${{GITHUB_SHA}}
-          htmlName: html-${{GITHUB_SHA}}
-          apiName: api-${{GITHUB_SHA}}
+          tag: ${{env.GITHUB_SHA}}
+          htmlName: html-${{env.GITHUB_SHA}}
+          apiName: api-${{env.GITHUB_SHA}}
       #   value-files: >-
       #   [
       #     "values.yaml",
