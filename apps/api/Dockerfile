@@ -1,5 +1,7 @@
-FROM node:lts-alpine
-COPY ./dist/apps/api .
+FROM node:14.18.1
+RUN ls
+RUN pwd
+COPY ../../dist/apps/api .
 ENV PORT=3333
 EXPOSE ${PORT}
 RUN npm install --production
