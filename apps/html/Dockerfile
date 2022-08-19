@@ -1,6 +1,7 @@
 FROM node:14.18.1
 WORKDIR /app
-RUN ls -lf dist
+RUN ls
+RUN pwd
 COPY ./dist/apps/html .
 ENV PORT=3334
 EXPOSE ${PORT}
