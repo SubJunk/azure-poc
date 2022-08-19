@@ -74,14 +74,14 @@ jobs:
     - name: 'Deploy'
       uses: glopezep/helm@v1.7.1
       with:
-        release: '${{env.GITHUB_SHA}}'
+        release: '${{github.sha}}'
         namespace: 'default'
         chart: 'ci-helm/azure-poc'
         token: '${{ github.token }}'
         values: |
-          tag: ${{env.GITHUB_SHA}}
-          htmlName: html-${{env.GITHUB_SHA}}
-          apiName: api-${{env.GITHUB_SHA}}
+          tag: ${{github.sha}}
+          htmlName: html-${{github.sha}}
+          apiName: api-${{github.sha}}
       #   value-files: >-
       #   [
       #     "values.yaml",
