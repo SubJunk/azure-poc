@@ -1,7 +1,7 @@
 FROM node:14.18.1
 WORKDIR /app
-COPY ./dist/apps/html .
 RUN ls -lf dist
+COPY ./dist/apps/html .
 ENV PORT=3334
 EXPOSE ${PORT}
 RUN npm install --production
