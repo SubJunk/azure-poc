@@ -71,6 +71,24 @@ jobs:
         secret-name: ${{ env.REGISTRY_NAME }}-registry-connection
         namespace: ${{ env.NAMESPACE }}
 
+    - name: 'Deploy'
+      uses: 'deliverybot/helm@v1'
+      with:
+        release: '${{GITHUB_SHA}}'
+        namespace: 'default'
+        chart: 'ci-helm/azure-poc'
+        token: '${{ github.token }}'
+        values: |
+          tag: ${{GITHUB_SHA}}
+          htmlName: html-${{GITHUB_SHA}}
+          apiName: api-${{GITHUB_SHA}}
+      #   value-files: >-
+      #   [
+      #     "values.yaml",
+      #     "values.production.yaml"
+      #   ]
+      # env:
+      #   KUBECONFIG_FILE: '${{ secrets.KUBECONFIG }}'
     # # Baking the helm chart to generate the manifests to deploy
     # - uses: azure/k8s-bake@v1
     #   with:
