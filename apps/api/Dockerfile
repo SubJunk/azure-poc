@@ -2,7 +2,7 @@ FROM node:14.18.1
 WORKDIR /app
 RUN ls
 RUN pwd
-COPY ../../dist/apps/api .
+COPY ./dist/apps/api .
 ENV PORT=3333
 EXPOSE ${PORT}
 RUN npm install --production
