@@ -72,7 +72,7 @@ jobs:
         namespace: ${{ env.NAMESPACE }}
 
     - name: 'Deploy'
-      uses: 'deliverybot/helm@v1'
+      uses: glopezep/helm@v1.7.1
       with:
         release: '${{env.GITHUB_SHA}}'
         namespace: 'default'
