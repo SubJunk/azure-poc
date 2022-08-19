@@ -1,3 +1,5 @@
+# This is based on https://github.com/Azure/actions-workflow-samples/blob/master/Kubernetes/build-and-deploy-docker-image-to-aks-using-helm.yml
+
 on: [push]
 
 # Environment variables available to all jobs and steps in this workflow
@@ -26,7 +28,7 @@ jobs:
     - uses: actions/cache@v3
       id: npm-cache # use this to check for `cache-hit` ==> if: steps.npm-cache.outputs.cache-hit != 'true'
       with:
-        path: ${{ steps.npm-cache-dir.outputs.dir }}
+        path: node_modules
         key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
         restore-keys: |
           ${{ runner.os }}-node-
@@ -47,11 +49,9 @@ jobs:
     - run: |
         docker build . -t ${{ env.REGISTRY_NAME }}.azurecr.io/api:${{ github.sha }}
         docker push ${{ env.REGISTRY_NAME }}.azurecr.io/api:${{ github.sha }}
-      working-directory: ./apps/api
     - run: |
         docker build . -t ${{ env.REGISTRY_NAME }}.azurecr.io/html:${{ github.sha }}
         docker push ${{ env.REGISTRY_NAME }}.azurecr.io/html:${{ github.sha }}
-      working-directory: ./apps/html
 
     # Set the target Azure Kubernetes Service (AKS) cluster.
     - uses: azure/aks-set-context@v1
@@ -73,21 +73,21 @@ jobs:
         secret-name: ${{ env.REGISTRY_NAME }}-registry-connection
         namespace: ${{ env.NAMESPACE }}
 
-    # Baking the helm chart to generate the manifests to deploy
-    - uses: azure/k8s-bake@v1
-      with:
-        renderEngine: 'helm2'
-        helmChart: './my-helm-chart/'
-        helm-version: 'latest'
-      id: bake
+    # # Baking the helm chart to generate the manifests to deploy
+    # - uses: azure/k8s-bake@v1
+    #   with:
+    #     renderEngine: 'helm2'
+    #     helmChart: './my-helm-chart/'
+    #     helm-version: 'latest'
+    #   id: bake
 
-    # Deploy app to AKS
-    - uses: azure/k8s-deploy@v1
-      with:
-        manifests: ${{ steps.bake.outputs.manifestsBundle }}
-        images: |
-          ${{ env.REGISTRY_NAME }}.azurecr.io/api:${{ github.sha }}
-          ${{ env.REGISTRY_NAME }}.azurecr.io/html:${{ github.sha }}
-        imagepullsecrets: |
-          ${{ env.REGISTRY_NAME }}-registry-connection
-        namespace: ${{ env.NAMESPACE }}
+    # # Deploy app to AKS
+    # - uses: azure/k8s-deploy@v1
+    #   with:
+    #     manifests: ${{ steps.bake.outputs.manifestsBundle }}
+    #     images: |
+    #       ${{ env.REGISTRY_NAME }}.azurecr.io/api:${{ github.sha }}
+    #       ${{ env.REGISTRY_NAME }}.azurecr.io/html:${{ github.sha }}
+    #     imagepullsecrets: |
+    #       ${{ env.REGISTRY_NAME }}-registry-connection
+    #     namespace: ${{ env.NAMESPACE }}
