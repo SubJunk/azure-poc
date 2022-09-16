@@ -1,5 +1,3 @@
-# This is based on https://github.com/Azure/actions-workflow-samples/blob/master/Kubernetes/build-and-deploy-docker-image-to-aks-using-helm.yml
-
 on: [push]
 
 # Environment variables available to all jobs and steps in this workflow
@@ -15,6 +13,24 @@ jobs:
     environment: testing
     steps:
     - uses: actions/checkout@master
+
+    # Setup Node
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 14.18.1
+
+    - uses: actions/cache@v3
+      id: npm-cache # use this to check for `cache-hit` ==> if: steps.npm-cache.outputs.cache-hit != 'true'
+      with:
+        path: node_modules
+        key: node-modules-${{ hashFiles('package-lock.json') }}
+
+    - name: Install dependencies
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: npm i --prefer-offline
+
+    # Build Nx apps
+    - run: npx nx run-many --target=build --projects=api,html
 
     # Connect to Azure Container registry (ACR)
     - uses: azure/docker-login@v1
@@ -51,20 +67,39 @@ jobs:
         secret-name: ${{ env.REGISTRY_NAME }}-registry-connection
         namespace: ${{ env.NAMESPACE }}
 
-    # Baking the helm chart to generate the manifests to deploy
-    - uses: azure/k8s-bake@v1
+    - name: 'Deploy'
+      uses: glopezep/helm@v1.7.1
       with:
-        renderEngine: 'helm2'
-        helmChart: './my-helm-chart/'
-        helm-version: 'latest'
-      id: bake
+        release: '${{github.sha}}'
+        namespace: 'default'
+        chart: 'ci-helm/azure-poc'
+        token: '${{ github.token }}'
+        values: |
+          tag: ${{github.sha}}
+          htmlName: html-${{github.sha}}
+          apiName: api-${{github.sha}}
+      #   value-files: >-
+      #   [
+      #     "values.yaml",
+      #     "values.production.yaml"
+      #   ]
+      # env:
+      #   KUBECONFIG_FILE: '${{ secrets.KUBECONFIG }}'
+    # # Baking the helm chart to generate the manifests to deploy
+    # - uses: azure/k8s-bake@v1
+    #   with:
+    #     renderEngine: 'helm2'
+    #     helmChart: './my-helm-chart/'
+    #     helm-version: 'latest'
+    #   id: bake
 
-    # Deploy app to AKS
-    - uses: azure/k8s-deploy@v1
-      with:
-        manifests: ${{ steps.bake.outputs.manifestsBundle }}
-        images: |
-          ${{ env.REGISTRY_NAME }}.azurecr.io/myimage:${{ github.sha }}
-        imagepullsecrets: |
-          ${{ env.REGISTRY_NAME }}-registry-connection
-        namespace: ${{ env.NAMESPACE }}
+    # # Deploy app to AKS
+    # - uses: azure/k8s-deploy@v1
+    #   with:
+    #     manifests: ${{ steps.bake.outputs.manifestsBundle }}
+    #     images: |
+    #       ${{ env.REGISTRY_NAME }}.azurecr.io/api:${{ github.sha }}
+    #       ${{ env.REGISTRY_NAME }}.azurecr.io/html:${{ github.sha }}
+    #     imagepullsecrets: |
+    #       ${{ env.REGISTRY_NAME }}-registry-connection
+    #     namespace: ${{ env.NAMESPACE }}
