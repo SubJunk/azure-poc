@@ -16,6 +16,24 @@ jobs:
     steps:
     - uses: actions/checkout@master
 
+    # Setup Node
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 14.18.1
+
+    - uses: actions/cache@v3
+      id: npm-cache # use this to check for `cache-hit` ==> if: steps.npm-cache.outputs.cache-hit != 'true'
+      with:
+        path: node_modules
+        key: node-modules-${{ hashFiles('package-lock.json') }}
+
+    - name: Install dependencies
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: npm i --prefer-offline
+
+    # Build Nx apps
+    - run: npx nx run-many --target=build --projects=api,html
+
     # Connect to Azure Container registry (ACR)
     - uses: azure/docker-login@v1
       with:
