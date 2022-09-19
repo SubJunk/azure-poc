@@ -73,7 +73,8 @@ jobs:
     - uses: azure/k8s-bake@v1
       with:
         renderEngine: 'helm2'
-        helmChart: './my-helm-chart/'
+        silent: 'false'
+        helmChart: '../../ci-helm/azure-poc/Chart.yaml'
         helm-version: 'latest'
       id: bake
 
