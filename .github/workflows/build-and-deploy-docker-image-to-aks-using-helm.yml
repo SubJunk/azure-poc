@@ -74,7 +74,7 @@ jobs:
       with:
         renderEngine: 'helm2'
         silent: 'false'
-        helmChart: '../../ci-helm/azure-poc/Chart.yaml'
+        helmChart: './ci-helm/azure-poc/Chart.yaml'
         helm-version: 'latest'
       id: bake
 
