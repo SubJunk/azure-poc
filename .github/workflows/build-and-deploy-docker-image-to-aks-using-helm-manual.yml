@@ -78,13 +78,13 @@ jobs:
           tag: ${{github.sha}}
           htmlName: html-${{github.sha}}
           apiName: api-${{github.sha}}
-      #   value-files: >-
-      #   [
-      #     "values.yaml",
-      #     "values.production.yaml"
-      #   ]
-      # env:
-      #   KUBECONFIG_FILE: '${{ secrets.KUBECONFIG }}'
+        # value-files: >-
+        # [
+        #   "values.yaml",
+        #   "values.production.yaml"
+        # ]
+      env:
+        KUBECONFIG_FILE: '${{ secrets.KUBECONFIG }}'
     # # Baking the helm chart to generate the manifests to deploy
     # - uses: azure/k8s-bake@v1
     #   with:
