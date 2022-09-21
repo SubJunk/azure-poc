@@ -70,6 +70,7 @@ jobs:
     - name: 'Deploy'
       uses: glopezep/helm@v1.7.1
       with:
+        helm: 'helm3'
         release: '${{github.sha}}'
         namespace: 'default'
         chart: 'ci-helm/azure-poc'
