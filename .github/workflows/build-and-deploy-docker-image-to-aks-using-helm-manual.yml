@@ -68,10 +68,16 @@ jobs:
         namespace: ${{ env.NAMESPACE }}
     - run: |
        kubectl config get-contexts
-    - name: Deploy
-      uses: WyriHaximus/github-action-helm3@v2
+    - uses: azure/setup-helm@v3
       with:
-        exec: helm upgrade ${{github.sha}} ./ci-helm/azure-poc --install --wait --atomic --namespace=default
+         version: '3.5.3'
+      id: install
+    - run: |
+        helm upgrade ${{github.sha}} ./ci-helm/azure-poc --install --wait --atomic --namespace=default
+#     - name: Deploy
+#       uses: WyriHaximus/github-action-helm3@v2
+#       with:
+#         exec: helm upgrade ${{github.sha}} ./ci-helm/azure-poc --install --wait --atomic --namespace=default
 #     - name: 'Deploy'
 #       uses: glopezep/helm@v1.7.1
 #       with:
