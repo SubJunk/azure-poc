@@ -72,7 +72,6 @@ jobs:
       uses: WyriHaximus/github-action-helm3@v2
       with:
         exec: helm upgrade ${{github.sha}} ./ci-helm/azure-poc --install --wait --atomic --namespace=default
-        kubeconfig: '${{ secrets.KUBECONFIG }}'
 #     - name: 'Deploy'
 #       uses: glopezep/helm@v1.7.1
 #       with:
