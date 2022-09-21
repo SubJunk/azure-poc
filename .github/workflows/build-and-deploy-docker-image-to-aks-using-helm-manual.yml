@@ -68,6 +68,7 @@ jobs:
         namespace: ${{ env.NAMESPACE }}
     - run: |
        kubectl config get-contexts
+       ls $KUBECONFIG
     - name: 'Deploy'
       uses: glopezep/helm@v1.7.1
       with:
