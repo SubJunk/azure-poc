@@ -8,3 +8,4 @@ htmlImage:
   name: html
   repository: klausazurepoc.azurecr.io
   tag: latest
+prNumber: ''

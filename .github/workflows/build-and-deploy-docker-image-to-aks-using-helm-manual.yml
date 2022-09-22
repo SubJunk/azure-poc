@@ -1,0 +1,112 @@
+on:
+  push:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+# Environment variables available to all jobs and steps in this workflow
+env:
+  REGISTRY_NAME: klausazurepoc
+  CLUSTER_NAME: azure-poc-cluster
+  CLUSTER_RESOURCE_GROUP: azure-poc
+  NAMESPACE: default
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: testing
+    steps:
+    - uses: actions/checkout@master
+
+    # Setup Node
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 14.18.1
+
+    - uses: actions/cache@v3
+      id: npm-cache # use this to check for `cache-hit` ==> if: steps.npm-cache.outputs.cache-hit != 'true'
+      with:
+        path: node_modules
+        key: node-modules-${{ hashFiles('package-lock.json') }}
+
+    - name: Install dependencies
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: npm i --prefer-offline
+
+    # Build Nx apps
+    - run: npx nx run-many --target=build --projects=api,html
+
+    # Connect to Azure Container registry (ACR)
+    - uses: azure/docker-login@v1
+      with:
+        login-server: ${{ env.REGISTRY_NAME }}.azurecr.io
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
+
+    # Container build and push to a Azure Container registry (ACR)
+    - name: Docker build
+      run: |
+        docker build . -t ${{ env.REGISTRY_NAME }}.azurecr.io/api:${{ github.sha }} --file ./apps/api/Dockerfile
+        docker push ${{ env.REGISTRY_NAME }}.azurecr.io/api:${{ github.sha }}
+        docker build . -t ${{ env.REGISTRY_NAME }}.azurecr.io/html:${{ github.sha }} --file ./apps/html/Dockerfile
+        docker push ${{ env.REGISTRY_NAME }}.azurecr.io/html:${{ github.sha }}
+
+    # Set the target Azure Kubernetes Service (AKS) cluster.
+    - uses: azure/aks-set-context@v1
+      with:
+        creds: '${{ secrets.AZURE_CREDENTIALS }}'
+        cluster-name: ${{ env.CLUSTER_NAME }}
+        resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
+
+    # Create imagepullsecret for Azure Container registry (ACR)
+    - uses: azure/k8s-create-secret@v1
+      with:
+        container-registry-url: ${{ env.REGISTRY_NAME }}.azurecr.io
+        container-registry-username: ${{ secrets.REGISTRY_USERNAME }}
+        container-registry-password: ${{ secrets.REGISTRY_PASSWORD }}
+        secret-name: ${{ env.REGISTRY_NAME }}-registry-connection
+        namespace: ${{ env.NAMESPACE }}
+
+  deploy-pr:
+    if: github.event_name == 'pull_request' && (github.event.action == 'opened' || github.event.action == 'synchronize' || github.event.action == 'reopened')
+    needs: build
+    runs-on: ubuntu-latest
+    concurrency: pr-${{ github.event.pull_request.number }}
+    environment: testing  
+    env:
+      pr: pr-${{ github.event.pull_request.number }}
+    steps:
+      - uses: actions/checkout@v1
+      # Set the target Azure Kubernetes Service (AKS) cluster.
+      - uses: azure/aks-set-context@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          cluster-name: ${{ env.CLUSTER_NAME }}
+          resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
+      # Create namespace if doesn't exist
+      - run: |
+          kubectl create namespace ${{ env.pr }} --dry-run -o json | kubectl apply -f -
+      - uses: azure/setup-helm@v3
+        with:
+          version: '3.5.3'
+      - run: |
+          helm upgrade ${{ env.pr }} ./ci-helm/azure-poc --install --wait --namespace=default --set apiImage.tag=${{github.sha}}  --set htmlImage.tag=${{github.sha}} --set htmlName=html-${{ env.pr }} --set apiName=api-${{ env.pr }} --set prNumber=${{ env.pr }}
+
+  destroy-pr:
+    if: github.event_name == 'pull_request' && (github.event.action == 'closed')
+    runs-on: ubuntu-latest
+    concurrency: pr-${{ github.event.pull_request.number }}
+    environment: testing
+    env:
+      pr: pr-${{ github.event.pull_request.number }}
+    steps:
+      - uses: azure/aks-set-context@v1
+        with:
+          creds: '${{ secrets.AZURE_CREDENTIALS }}'
+          cluster-name: ${{ env.CLUSTER_NAME }}
+          resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
+      - uses: azure/setup-helm@v3
+        with:
+          version: '3.5.3'
+      - run: |
+          helm uninstall ${{ env.pr }}
+
