@@ -68,25 +68,25 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     concurrency: pr-${{ github.event.pull_request.number }}
-    environment:
-      PR_NUM: pr-${{ github.event.pull_request.number }}
+    env:
+      pr: pr-${{ github.event.pull_request.number }}
     steps:
       - uses: actions/checkout@v1
       # Create namespace if doesn't exist
       - run: |
-          kubectl create namespace ${{ env.PR_NUM }} --dry-run -o json | kubectl apply -f -
+          kubectl create namespace ${{ env.pr }} --dry-run -o json | kubectl apply -f -
       - uses: azure/setup-helm@v3
         with:
           version: '3.5.3'
       - run: |
-          helm upgrade ${{ env.PR_NUM }} ./ci-helm/azure-poc --install --wait --namespace=default --set apiImage.tag=${{github.sha}}  --set htmlImage.tag=${{github.sha}} --set htmlName=html-${{ env.PR_NUM }} --set apiName=api-${{ env.PR_NUM }} --set prNumber=${{ env.PR_NUM }}
+          helm upgrade ${{ env.pr }} ./ci-helm/azure-poc --install --wait --namespace=default --set apiImage.tag=${{github.sha}}  --set htmlImage.tag=${{github.sha}} --set htmlName=html-${{ env.pr }} --set apiName=api-${{ env.pr }} --set prNumber=${{ env.pr }}
 
   destroy-pr:
     if: github.event_name == 'pull_request' && (github.event.action == 'closed')
     runs-on: ubuntu-latest
     concurrency: pr-${{ github.event.pull_request.number }}
-    environment:
-      PR_NUM: pr-${{ github.event.pull_request.number }}
+    env:
+      pr: pr-${{ github.event.pull_request.number }}
     steps:
       - uses: actions/checkout@v1
       - uses: azure/setup-helm@v3
