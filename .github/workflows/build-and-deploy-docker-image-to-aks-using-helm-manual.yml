@@ -108,5 +108,5 @@ jobs:
         with:
           version: '3.5.3'
       - run: |
-          helm uninstall ${{ env.PR_NUM }}
+          helm uninstall ${{ env.pr }}
 
