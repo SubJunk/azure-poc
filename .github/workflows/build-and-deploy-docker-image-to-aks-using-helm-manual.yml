@@ -73,7 +73,7 @@ jobs:
          version: '3.5.3'
       id: install
     - run: |
-        helm upgrade ${{github.sha}} ./ci-helm/azure-poc --install --wait --atomic --namespace=default --set tag=${{github.sha}} --set htmlName=html-${{github.sha}} --set apiName=api-${{github.sha}}
+        helm upgrade test1 ./ci-helm/azure-poc --install --wait --namespace=default --set tag=${{github.sha}} --set htmlName=html-1 --set apiName=api-1
 #     - name: Deploy
 #       uses: WyriHaximus/github-action-helm3@v2
 #       with:
