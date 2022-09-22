@@ -75,6 +75,12 @@ jobs:
       pr: pr-${{ github.event.pull_request.number }}
     steps:
       - uses: actions/checkout@v1
+      # Set the target Azure Kubernetes Service (AKS) cluster.
+      - uses: azure/aks-set-context@v1
+        with:
+          creds: '${{ secrets.AZURE_CREDENTIALS }}'
+          cluster-name: ${{ env.CLUSTER_NAME }}
+          resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
       # Create namespace if doesn't exist
       - run: |
           kubectl create namespace ${{ env.pr }} --dry-run -o json | kubectl apply -f -
@@ -91,7 +97,11 @@ jobs:
     env:
       pr: pr-${{ github.event.pull_request.number }}
     steps:
-      - uses: actions/checkout@v1
+      - uses: azure/aks-set-context@v1
+        with:
+          creds: '${{ secrets.AZURE_CREDENTIALS }}'
+          cluster-name: ${{ env.CLUSTER_NAME }}
+          resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
       - uses: azure/setup-helm@v3
         with:
           version: '3.5.3'
