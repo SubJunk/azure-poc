@@ -54,10 +54,6 @@ jobs:
         cluster-name: ${{ env.CLUSTER_NAME }}
         resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
 
-    # Create namespace if doesn't exist
-    - run: |
-        kubectl create namespace ${{ env.NAMESPACE }} --dry-run -o json | kubectl apply -f -
-
     # Create imagepullsecret for Azure Container registry (ACR)
     - uses: azure/k8s-create-secret@v1
       with:
@@ -66,54 +62,36 @@ jobs:
         container-registry-password: ${{ secrets.REGISTRY_PASSWORD }}
         secret-name: ${{ env.REGISTRY_NAME }}-registry-connection
         namespace: ${{ env.NAMESPACE }}
-    - run: |
-       kubectl config get-contexts
-    - uses: azure/setup-helm@v3
-      with:
-         version: '3.5.3'
-      id: install
-    - run: |
-        helm upgrade test1 ./ci-helm/azure-poc --install --wait --namespace=default --set apiImage.tag=${{github.sha}}  --set htmlImage.tag=${{github.sha}} --set htmlName=html-2 --set apiName=api-2
-#     - name: Deploy
-#       uses: WyriHaximus/github-action-helm3@v2
-#       with:
-#         exec: helm upgrade ${{github.sha}} ./ci-helm/azure-poc --install --wait --atomic --namespace=default --set tag=${{github.sha}}
-#           htmlName: html-${{github.sha}}
-#           apiName: api-${{github.sha}}
-#     - name: 'Deploy'
-#       uses: glopezep/helm@v1.7.1
-#       with:
-#         helm: 'helm3'
-#         release: '${{github.sha}}'
-#         namespace: 'default'
-#         chart: 'ci-helm/azure-poc'
-#         token: '${{ github.token }}'
-#         values: |
-#           tag: ${{github.sha}}
-#           htmlName: html-${{github.sha}}
-#           apiName: api-${{github.sha}}
-        # value-files: >-
-        # [
-        #   "values.yaml",
-        #   "values.production.yaml"
-        # ]
-#       env:
-#         KUBECONFIG_FILE: '${{ env.KUBECONFIG }}'
-    # # Baking the helm chart to generate the manifests to deploy
-    # - uses: azure/k8s-bake@v1
-    #   with:
-    #     renderEngine: 'helm2'
-    #     helmChart: './my-helm-chart/'
-    #     helm-version: 'latest'
-    #   id: bake
 
-    # # Deploy app to AKS
-    # - uses: azure/k8s-deploy@v1
-    #   with:
-    #     manifests: ${{ steps.bake.outputs.manifestsBundle }}
-    #     images: |
-    #       ${{ env.REGISTRY_NAME }}.azurecr.io/api:${{ github.sha }}
-    #       ${{ env.REGISTRY_NAME }}.azurecr.io/html:${{ github.sha }}
-    #     imagepullsecrets: |
-    #       ${{ env.REGISTRY_NAME }}-registry-connection
-    #     namespace: ${{ env.NAMESPACE }}
+  deploy-pr:
+    if: github.event_name == 'pull_request' && (github.event.action == 'opened' || github.event.action == 'synchronize' || github.event.action == 'reopened')
+    needs: build
+    runs-on: ubuntu-latest
+    concurrency: pr-${{ github.event.pull_request.number }}
+    environment:
+      PR_NUM: pr-${{ github.event.pull_request.number }}
+    steps:
+      - uses: actions/checkout@v1
+      # Create namespace if doesn't exist
+      - run: |
+          kubectl create namespace ${{ env.PR_NUM }} --dry-run -o json | kubectl apply -f -
+      - uses: azure/setup-helm@v3
+        with:
+          version: '3.5.3'
+      - run: |
+          helm upgrade ${{ env.PR_NUM }} ./ci-helm/azure-poc --install --wait --namespace=default --set apiImage.tag=${{github.sha}}  --set htmlImage.tag=${{github.sha}} --set htmlName=html-${{ env.PR_NUM }} --set apiName=api-${{ env.PR_NUM }} --set prNumber=${{ env.PR_NUM }}
+
+  destroy-pr:
+    if: github.event_name == 'pull_request' && (github.event.action == 'closed')
+    runs-on: ubuntu-latest
+    concurrency: pr-${{ github.event.pull_request.number }}
+    environment:
+      PR_NUM: pr-${{ github.event.pull_request.number }}
+    steps:
+      - uses: actions/checkout@v1
+      - uses: azure/setup-helm@v3
+        with:
+          version: '3.5.3'
+      - run: |
+          helm uninstall ${{ env.PR_NUM }}
+
