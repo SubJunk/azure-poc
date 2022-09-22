@@ -8,6 +8,7 @@ export class AppService {
       { message: 'Is Kubernetes still awesome?', done: true },
       { message: 'Will we ever want to go back to Heroku?', done: false },
       { message: 'An update?', done: false },
+      { message: 'Did the PR deploy?', done: true },
     ];
   }
 }
