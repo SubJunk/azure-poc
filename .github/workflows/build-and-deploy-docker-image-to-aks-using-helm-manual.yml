@@ -71,6 +71,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     concurrency: pr-${{ github.event.pull_request.number }}
+    environment:
+      name: pr-${{ github.event.pull_request.number }}
+      url: https://20.88.190.153/pr-${{ github.event.pull_request.number }}
     env:
       pr: pr-${{ github.event.pull_request.number }}
     steps:
@@ -78,6 +81,7 @@ jobs:
       # Set the target Azure Kubernetes Service (AKS) cluster.
       - uses: azure/aks-set-context@v1
         with:
+          username: ${{ secrets.REGISTRY_USERNAME }}
           creds: '${{ secrets.AZURE_CREDENTIALS }}'
           cluster-name: ${{ env.CLUSTER_NAME }}
           resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
