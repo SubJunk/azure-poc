@@ -1,7 +1,6 @@
 on:
-  push:
   pull_request:
-    types: [opened, synchronize, reopened, closed]
+    types: [closed]
 
 # Environment variables available to all jobs and steps in this workflow
 env:
@@ -66,33 +65,7 @@ jobs:
         secret-name: ${{ env.REGISTRY_NAME }}-registry-connection
         namespace: ${{ env.NAMESPACE }}
 
-  deploy-pr:
-    if: github.event_name == 'pull_request' && (github.event.action == 'opened' || github.event.action == 'synchronize' || github.event.action == 'reopened')
-    needs: build
-    runs-on: ubuntu-latest
-    concurrency: pr-${{ github.event.pull_request.number }}
-    environment: testing  
-    env:
-      pr: pr-${{ github.event.pull_request.number }}
-    steps:
-      - uses: actions/checkout@v1
-      # Set the target Azure Kubernetes Service (AKS) cluster.
-      - uses: azure/aks-set-context@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-          cluster-name: ${{ env.CLUSTER_NAME }}
-          resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
-      # Create namespace if doesn't exist
-      - run: |
-          kubectl create namespace ${{ env.pr }} --dry-run -o json | kubectl apply -f -
-      - uses: azure/setup-helm@v3
-        with:
-          version: '3.5.3'
-      - run: |
-          helm upgrade ${{ env.pr }} ./ci-helm/azure-poc --install --wait --namespace=default --set apiImage.tag=${{github.sha}}  --set htmlImage.tag=${{github.sha}} --set htmlName=html-${{ env.pr }} --set apiName=api-${{ env.pr }} --set prNumber=${{ env.pr }}
-
   destroy-pr:
-    if: github.event_name == 'pull_request' && (github.event.action == 'closed')
     runs-on: ubuntu-latest
     concurrency: pr-${{ github.event.pull_request.number }}
     environment: testing
@@ -109,4 +82,3 @@ jobs:
           version: '3.5.3'
       - run: |
           helm uninstall ${{ env.pr }}
-
