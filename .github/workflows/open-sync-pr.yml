@@ -89,4 +89,4 @@ jobs:
         with:
           version: '3.5.3'
       - run: |
-          helm upgrade ${{ env.pr }} ./ci-helm/azure-poc --install --wait --namespace=default --set apiImage.tag=${{github.sha}}  --set htmlImage.tag=${{github.sha}} --set htmlName=html-${{ env.pr }} --set apiName=api-${{ env.pr }} --set prNumber=${{ env.pr }}
+          helm upgrade ${{ env.pr }} ./ci-helm/azure-poc --install --wait --namespace=${{ env.pr }} --set apiImage.tag=${{github.sha}}  --set htmlImage.tag=${{github.sha}} --set htmlName=html-${{ env.pr }} --set apiName=api-${{ env.pr }} --set prNumber=${{ env.pr }}
