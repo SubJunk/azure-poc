@@ -7,6 +7,7 @@ env:
   REGISTRY_NAME: klausazurepoc
   CLUSTER_NAME: azure-poc-cluster
   CLUSTER_RESOURCE_GROUP: azure-poc
+  NAMESPACE: pr-${{ github.event.pull_request.number }}
 
 jobs:
   build:
@@ -14,15 +15,6 @@ jobs:
     environment: testing
     steps:
     - uses: actions/checkout@master
-
-    # Find the PR associated with this push, if there is one.
-    - uses: jwalton/gh-find-current-pr@v1
-      id: findPr
-    # This will echo "Your PR is 7", or be skipped if there is no current PR.
-    - run: echo "Your PR is ${PR}"
-      if: success() && steps.findPr.outputs.number
-      env:
-        PR: pr-${{ steps.findPr.outputs.pr }}
 
     # Setup Node
     - uses: actions/setup-node@v3
@@ -71,7 +63,7 @@ jobs:
         container-registry-username: ${{ secrets.REGISTRY_USERNAME }}
         container-registry-password: ${{ secrets.REGISTRY_PASSWORD }}
         secret-name: ${{ env.REGISTRY_NAME }}-registry-connection
-        namespace: ${{ env.PR }}
+        namespace: ${{ env.NAMESPACE }}
 
   deploy-pr:
     if: github.event_name == 'pull_request'
@@ -82,15 +74,6 @@ jobs:
     steps:
       - uses: actions/checkout@v1
 
-      # Find the PR associated with this push, if there is one.
-      - uses: jwalton/gh-find-current-pr@v1
-        id: findPr
-      # This will echo "Your PR is 7", or be skipped if there is no current PR.
-      - run: echo "Your PR is ${PR}"
-        if: success() && steps.findPr.outputs.number
-        env:
-          PR: pr-${{ steps.findPr.outputs.pr }}
-
       # Set the target Azure Kubernetes Service (AKS) cluster.
       - uses: azure/aks-set-context@v1
         with:
@@ -99,9 +82,9 @@ jobs:
           resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
       # Create namespace if doesn't exist
       - run: |
-          kubectl create namespace ${{ env.PR }} --dry-run -o json | kubectl apply -f -
+          kubectl create namespace ${{ env.NAMESPACE }} --dry-run -o json | kubectl apply -f -
       - uses: azure/setup-helm@v3
         with:
           version: '3.5.3'
       - run: |
-          helm upgrade ${{ env.PR }} ./ci-helm/azure-poc --install --wait --namespace=${{ env.PR }} --set apiImage.tag=${{github.sha}}  --set htmlImage.tag=${{github.sha}} --set htmlName=html-${{ env.PR }} --set apiName=api-${{ env.PR }} --set prNumber=${{ env.PR }}
+          helm upgrade ${{ env.NAMESPACE }} ./ci-helm/azure-poc --install --wait --namespace=${{ env.NAMESPACE }} --set apiImage.tag=${{github.sha}}  --set htmlImage.tag=${{github.sha}} --set htmlName=html-${{ env.NAMESPACE }} --set apiName=api-${{ env.NAMESPACE }} --set prNumber=${{ env.NAMESPACE }}
