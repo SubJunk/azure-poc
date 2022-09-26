@@ -12,7 +12,6 @@ env:
 jobs:
   destroy-pr:
     runs-on: ubuntu-latest
-    concurrency: pr-${{ github.event.pull_request.number }}
     environment: testing
     env:
       pr: pr-${{ github.event.pull_request.number }}
