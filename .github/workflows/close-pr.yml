@@ -16,7 +16,7 @@ jobs:
     env:
       pr: pr-${{ github.event.pull_request.number }}
     steps:
-      - uses: azure/aks-set-context@v1
+      - uses: azure/aks-set-context@v2
         with:
           creds: '${{ secrets.AZURE_CREDENTIALS }}'
           cluster-name: ${{ env.CLUSTER_NAME }}
@@ -25,4 +25,4 @@ jobs:
         with:
           version: '3.5.3'
       - run: |
-          helm uninstall ${{ env.pr }}
+          helm uninstall ${{ env.pr }} --namespace=${{ env.pr }}
