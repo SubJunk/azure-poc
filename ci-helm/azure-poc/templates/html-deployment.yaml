@@ -22,7 +22,7 @@ spec:
       containers:
         - env:
             - name: apiPath
-              value: "http://{{ .Values.apiName }}.default.svc:8081"
+              value: "http://{{ .Values.apiName }}.{{ .Values.prNumber }}.svc:8081"
           image: {{ .Values.htmlImage.repository }}/{{ .Values.htmlImage.name }}:{{ .Values.htmlImage.tag }}
           name: {{ .Values.htmlName }}
           ports:
