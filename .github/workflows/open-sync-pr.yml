@@ -1,5 +1,4 @@
 on:
-  push:
   pull_request:
     types: [opened, synchronize, reopened]
 
@@ -8,7 +7,7 @@ env:
   REGISTRY_NAME: klausazurepoc
   CLUSTER_NAME: azure-poc-cluster
   CLUSTER_RESOURCE_GROUP: azure-poc
-  NAMESPACE: default
+  NAMESPACE: pr-${{ github.event.pull_request.number }}
 
 jobs:
   build:
@@ -50,15 +49,21 @@ jobs:
         docker build . -t ${{ env.REGISTRY_NAME }}.azurecr.io/html:${{ github.sha }} --file ./apps/html/Dockerfile
         docker push ${{ env.REGISTRY_NAME }}.azurecr.io/html:${{ github.sha }}
 
-    # Set the target Azure Kubernetes Service (AKS) cluster.
-    - uses: azure/aks-set-context@v1
+    - uses: azure/login@v1
       with:
-        creds: '${{ secrets.AZURE_CREDENTIALS }}'
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    # Set the target Azure Kubernetes Service (AKS) cluster.
+    - uses: azure/aks-set-context@v3
+      with:
         cluster-name: ${{ env.CLUSTER_NAME }}
         resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
 
+    # Create namespace if doesn't exist
+    - run: |
+        kubectl create namespace ${{ env.NAMESPACE }} --dry-run -o json | kubectl apply -f -
+
     # Create imagepullsecret for Azure Container registry (ACR)
-    - uses: azure/k8s-create-secret@v1
+    - uses: azure/k8s-create-secret@v2
       with:
         container-registry-url: ${{ env.REGISTRY_NAME }}.azurecr.io
         container-registry-username: ${{ secrets.REGISTRY_USERNAME }}
@@ -72,21 +77,18 @@ jobs:
     runs-on: ubuntu-latest
     concurrency: pr-${{ github.event.pull_request.number }}
     environment: testing
-    env:
-      pr: pr-${{ github.event.pull_request.number }}
     steps:
       - uses: actions/checkout@v1
-      # Set the target Azure Kubernetes Service (AKS) cluster.
-      - uses: azure/aks-set-context@v1
+      - uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+      # Set the target Azure Kubernetes Service (AKS) cluster.
+      - uses: azure/aks-set-context@v3
+        with:
           cluster-name: ${{ env.CLUSTER_NAME }}
           resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
-      # Create namespace if doesn't exist
-      - run: |
-          kubectl create namespace ${{ env.pr }} --dry-run -o json | kubectl apply -f -
       - uses: azure/setup-helm@v3
         with:
           version: '3.5.3'
       - run: |
-          helm upgrade ${{ env.pr }} ./ci-helm/azure-poc --install --wait --namespace=default --set apiImage.tag=${{github.sha}}  --set htmlImage.tag=${{github.sha}} --set htmlName=html-${{ env.pr }} --set apiName=api-${{ env.pr }} --set prNumber=${{ env.pr }}
+          helm upgrade ${{ env.NAMESPACE }} ./ci-helm/azure-poc --install --wait --namespace=${{ env.NAMESPACE }} --set apiImage.tag=${{github.sha}}  --set htmlImage.tag=${{github.sha}} --set htmlName=html-${{ env.NAMESPACE }} --set apiName=api-${{ env.NAMESPACE }} --set prNumber=${{ env.NAMESPACE }}
