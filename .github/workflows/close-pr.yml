@@ -28,3 +28,6 @@ jobs:
           version: '3.5.3'
       - run: |
           helm uninstall ${{ env.pr }} --namespace=${{ env.pr }}
+      # Delete namespace
+      - run: |
+          kubectl delete namespace ${{ env.NAMESPACE }}
